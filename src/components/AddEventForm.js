@@ -11,12 +11,13 @@ import {
 } from 'antd';
 
 import { v4 as uuid } from 'uuid';
-import { useLocation,useNavigate } from "react-router-dom";
-import { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from "react-router-dom";
+import { useState } from 'react';
 import dayjs from 'dayjs';
+import { useDispatch, connect } from "react-redux";
+import { CREATE_EVENT, UPDATE_EVENT } from '../actions';
 
 const { Text } = Typography;
-
 const { TextArea } = Input;
 
 const EVENTS_LIST = "EVENTS_LIST";
@@ -25,6 +26,7 @@ const CURRENT_USER = "CURRENT_USER";
 
 const AddEventForm = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const { state } = useLocation();
   const [messageApi, contextHolder] = message.useMessage();
   const [eventDate, setEventDate] = useState();
@@ -33,14 +35,14 @@ const AddEventForm = () => {
     name: state?.name,
     price: state?.price,
     description: state?.description,
-    termsAndService:state?.termsAndService,
-    eventType:state?.eventType,
+    termsAndService: state?.termsAndService,
+    eventType: state?.eventType,
   };
 
   function onChange(value, dateString) {
     if (value) {
       setEventDate(
-         value.toISOString(true) );
+        value.toISOString(true));
     }
     console.log("Selected Time: ", value); //Moment object
     console.log("Formatted Selected Time: ", dateString); //String
@@ -55,27 +57,18 @@ const AddEventForm = () => {
     const termsAndService = values.termsAndService;
     const dateOfEvent = values.dateOfEvent;
     const unique_id = uuid();
-    let recordId= '';
-  
-    const _user = localStorage.getItem(CURRENT_USER) !== null ? JSON.parse(localStorage.getItem(CURRENT_USER)) : null;
-    if (_user !== null) {
-      const _eventsList = localStorage.getItem(_user.email) !== null ? JSON.parse(localStorage.getItem(_user.email)) : [];
-      
-      if(state!==null) {
-        recordId= state.id;
-        _eventsList.splice(_eventsList.findIndex(item=>item.id===recordId),1);
-      } else {
-        recordId = unique_id.slice(0,8)
-      }
-      _eventsList.push({id: recordId, name: name, description: description, price: price, eventType: eventType, termsAndService: termsAndService, dateOfEvent: dateOfEvent, });
-      localStorage.setItem(_user.email, JSON.stringify(_eventsList));
-      messageApi.open({
-        type: 'success',
-        content: 'Event Created Successfully',
-      });
-
-      navigate("/eventsList", {replace:true});
+    let recordId = '';
+    var payload;
+    if (state !== null) {
+      recordId = state.id;
+      payload = { id: recordId, name: name, description: description, price: price, eventType: eventType, termsAndService: termsAndService, dateOfEvent: dateOfEvent };
+      dispatch({ type: UPDATE_EVENT, payload });
+    } else {
+      recordId = unique_id.slice(0, 8)
+      payload = { id: recordId, name: name, description: description, price: price, eventType: eventType, termsAndService: termsAndService, dateOfEvent: dateOfEvent };
+      dispatch({ type: CREATE_EVENT, payload });
     }
+    navigate("/eventsList", { replace: true });
   }
 
   const onFinishFailed = (values) => {
@@ -134,10 +127,10 @@ const AddEventForm = () => {
                 offset: 0,
                 span: 24,
               }}>
-              <DatePicker name="dateOfEvent" 
-              defaultValue={dayjs (state?.dateOfEvent ? state?.dateOfEvent: "2023/03/10" , "YYYY/MM/DD")}
-              onChange={onChange}
-              format={"YYYY/MM/DD"}
+              <DatePicker name="dateOfEvent"
+                defaultValue={dayjs(state?.dateOfEvent ? state?.dateOfEvent : "2023/03/10", "YYYY/MM/DD")}
+                onChange={onChange}
+                format={"YYYY/MM/DD"}
               />
             </Form.Item>
 
@@ -180,4 +173,5 @@ const AddEventForm = () => {
   );
 };
 
-export default AddEventForm;
+
+export default connect()(AddEventForm);

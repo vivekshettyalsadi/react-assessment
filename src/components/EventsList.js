@@ -1,10 +1,11 @@
 
-import { Card, List, FloatButton, message  } from 'antd';
+import { List, FloatButton, message  } from 'antd';
 import React, { useState, useEffect } from 'react';
-import { Route, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { PlusCircleTwoTone } from '@ant-design/icons';
-import dayjs from 'dayjs';
 import moment from 'moment';
+import {LIST_EVENTS,DELETE_EVENT}from '../actions';
+import { useDispatch,connect,useSelector } from "react-redux";
 
 const EVENTS_LIST = "EVENTS_LIST";
 const CURRENT_USER = "CURRENT_USER";
@@ -12,13 +13,14 @@ const CURRENT_USER = "CURRENT_USER";
 
 const EventsList = () => {
   const [events, setEvents] = useState([]);
-  const [initLoading, setInitLoading] = useState(true);
+  const [initLoading, setInitLoading] = useState(false);
   const navigate = useNavigate();
   const [messageApi, contextHolder] = message.useMessage();
-
+  const dispatch = useDispatch();
+  const eventsListFromStore = useSelector(state => state);
 
   useEffect(() => {
-    loadEvents()
+    dispatch({ type: LIST_EVENTS });
   }, []);
 
   const loadEvents = () => {
@@ -30,12 +32,11 @@ const EventsList = () => {
     setInitLoading(false);
   }
 
-  const deletEvent=(event)=>{
-    const _user = localStorage.getItem(CURRENT_USER) !== null ? JSON.parse(localStorage.getItem(CURRENT_USER)) : null;
-    const _eventsList = localStorage.getItem(_user.email) !== null ? JSON.parse(localStorage.getItem(_user.email)) : [];
-    _eventsList.splice(_eventsList.findIndex(item=>item.id===event.id),1);
-    localStorage.setItem(_user.email, JSON.stringify(_eventsList));
-    loadEvents();
+  const deletEvent = (event)=> {
+   
+    const payload=event;
+    dispatch({ type: DELETE_EVENT, payload});
+
     messageApi.open({
       type: 'success',
       content: 'Deleted Event Successfully',
@@ -50,7 +51,7 @@ const EventsList = () => {
           className="demo-loadmore-list"
           loading={initLoading}
           itemLayout="horizontal"
-          dataSource={events}
+          dataSource={eventsListFromStore}
           bordered={true}
           renderItem={(item) => (
             <List.Item
@@ -90,4 +91,5 @@ const EventsList = () => {
   );
 };
 
-export default EventsList;
+
+export default connect()(EventsList);
